@@ -17,19 +17,29 @@ str(dat)
 rgnc_dat_filter <- dat %>% filter(!is.na(temp_c), !is.na(rgcn2_full_temp_c))
 str(rgnc_dat_filter)
 summary(rgnc_dat_filter)
+rgnc_sig_freq_table <- table(rgnc_dat_filter$seg_id_nat) # check the number of segments in the data
+rgnc_site_freq_table <- table(rgnc_dat_filter$site_id)  # checking the number of sit_id 
 
-## Plotting the temperature
-par(mfrow = c(3,1))
-hist(rgnc_dat_filter$sntemp_temp_c, xlab = "Uncalibrated Process Model Prediction")
-hist(rgnc_dat_filter$rgcn2_full_temp_c, xlab = "Hybrid Model Prediction")
-hist(rgnc_dat_filter$temp_c, xlab = "Observed Temperature")
+## created a column for the difference in temperature measurements. then grouped data based on segment id. 
+rgnc_dat_filter$process_mod_tem_diff <- rgnc_dat_filter$temp_c - rgnc_dat_filter$sntemp_temp_c
+rgnc_dat_filter$hyprid_mod_tem_diff <- rgnc_dat_filter$sntemp_temp_c - rgnc_dat_filter$rgcn2_full_temp_c
+rgnc_by_seg <- rgnc_dat_filter %>% group_by(seg_id_nat)
 
-### Mean Absolute Error
-## created a column for the difference in temperature measurements. then found the mae by summing the error and 
-#dividing by n of row for the filtered data. 
+## Absolute Residual Error: calculating Mean Absolute Error (MAE) metric to compare both models prediction data vs observed data. We found the mae by finding the sum of the absolute value difference in predicted and observed temperature. Then divided the sum by the n row in grouped data.
+mae_metric <- rgnc_by_seg %>%   summarize(mae_process = round( sum( abs( rgnc_by_seg$process_mod_tem_diff) )/ nrow(rgnc_by_seg), 2),
+                            mae_hyprid = round( sum( abs( rgnc_by_seg$hyprid_mod_tem_diff) )/ nrow(rgnc_by_seg), 2) )
 
-rgnc_dat_filter$mae_process_error <- abs(rgnc_dat_filter$temp_c - rgnc_dat_filter$sntemp_temp_c) 
-mae_by_seg <- rgnc_dat_filter %>% group_by(seg_id_nat) %>%    
-  summarize(mae = sum(rgnc_dat_filter$mae_error)/ nrow(rgnc_dat_filter))
+# Absolute Residual Error: Root Mean Square Error (RMSE) square the difference in predicted and observed temperature.  sum the squared values, then divided by n of row. Finally,took the square root
+rmse_metric <- rgnc_by_seg %>% summarize(rmse_process = round( sqrt( sum(process_mod_tem_diff ^2) / nrow(rgnc_by_seg) ), 2), 
+                                         rmse_hyprid = round( sqrt( sum(hyprid_mod_tem_diff ^2) / nrow(rgnc_by_seg)), 2) ) 
+
+# Relative Parameter: Mean Absolute Relative Error (MARE) metric to compare both models prediction data vs observed data. We found MARE by: 1) dividing the difference between the predicted and observed data by the observed measurements. 2) sum the division answer. 3) divide by number of rows in grouped data.  
+mare_metric <- rgnc_by_seg %>% summarize( mare_process = round( mean ( abs( rgnc_by_seg$process_mod_tem_diff) / rgnc_by_seg$temp_c ), 2 ) )
+## mare_ process can't sum the values created by  `abs( rgnc_by_seg$process_mod_tem_diff) / rgnc_by_seg$temp_c )` 
+
+
+
     
 
+                                                         
+                                                          
