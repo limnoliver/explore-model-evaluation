@@ -1,6 +1,5 @@
 # an example of paired predictions and observations
 library(dplyr)
-library(plyr)
 dat <- readRDS('data/predicted_observed_temps.rds')
 head(dat)
 
@@ -22,43 +21,60 @@ summary(rgnc_dat_filter)
 ## Absolute Residual Error: calculating Mean Absolute Error (MAE) metric to compare both models prediction data vs observed data. We found the mae by finding the sum of the absolute value difference in predicted and observed temperature. Then divided the sum by the n row in grouped data.
 
 cal_mae <- function(observe_data, predict_data) {
-  rgnc_dat_filter %>%
-    mutate( diff_observed_predicted = observe_data - predict_data ) %>%
-    group_by(seg_id_nat) %>%
-    summarize( mae = round( mean( abs( diff_observed_predicted), na.rm = TRUE ), 2) )
+    mae = (mean(abs(observe_data - predict_data), na.rm = TRUE ))
+    return(mae)
 }
 
-mae_process_model <- cal_mae(rgnc_dat_filter$temp_c, rgnc_dat_filter$sntemp_temp_c)
-mae_hybrid_model <- cal_mae(rgnc_dat_filter$temp_c, rgnc_dat_filter$rgcn2_full_temp_c)
-mae <- left_join( mae_process_model, mae_hybrid_model, by = "seg_id_nat")
-colnames(mae)[2] <- "MAE_Process_Model"
-colnames(mae)[3] <- "MAE_Hybrid_Model"
+mae_process_model <- rgnc_dat_filter %>% 
+  group_by(seg_id_nat) %>%
+  summarize(mae = round(cal_mae(temp_c, sntemp_temp_c), 2))
+
+mae_hybrid_model <- rgnc_dat_filter %>% 
+  group_by(seg_id_nat) %>% 
+  summarize(mae = round(cal_mae(temp_c, rgcn2_full_temp_c), 2))
+
 # Absolute Residual Error: Root Mean Square Error (RMSE) square the difference in predicted and observed temperature.  sum the squared values, then divided by n of row. Finally,took the square root
 cal_rmse <- function(observe_data, predict_data){
-  rgnc_dat_filter %>%
-    mutate( diff_observed_predicted = observe_data - predict_data ) %>%
-    group_by(seg_id_nat) %>%
-    summarize( rmse = round( sqrt( mean( diff_observed_predicted ^2, na.rm = TRUE ) ) , 2)  )
+  rmse <- sqrt(mean((observe_data - predict_data) ^2, na.rm = TRUE ))
+  return(rmse)
 }
-rmse_process_model <- cal_rmse(rgnc_dat_filter$temp_c, rgnc_dat_filter$sntemp_temp_c)
-rmse_hybrid_model <- cal_rmse(rgnc_dat_filter$temp_c, rgnc_dat_filter$rgcn2_full_temp_c)
-rmse <- left_join(rmse_process_model, rmse_hybrid_model, by = "seg_id_nat")
-colnames(rmse)[2] <- "RMSE_Process_Model"
-colnames(rmse)[3] <- "RMSE_Hybrid_Model"
+rmse_process_model <- rgnc_dat_filter %>%
+  group_by(seg_id_nat) %>%
+  summarize(rmse = round( cal_rmse(temp_c, sntemp_temp_c), 2))
+
+rmse_hybrid_model <- rgnc_dat_filter %>%
+  group_by(seg_id_nat) %>%
+  summarize(rmse = round( cal_rmse(temp_c, rgcn2_full_temp_c), 2))
 
 # Relative Parameter: Mean Absolute Relative Error (MARE) metric to compare both models prediction data vs observed data. We found MARE by: 1) dividing the difference between the predicted and observed data by the observed measurements. 2) sum the division answer. 3) divide by number of rows in grouped data.  
 
 ## mare metric when removing inf terms from ratio of temp diff and observed temp. 
+mare_metric <- rgnc_by_seg %>% 
+  mutate(proc_rel_abs_error = abs (process_mod_tem_diff) / temp_c ) %>% 
+  mutate(hyp_rel_abs_error = abs (hybrid_mod_tem_diff) / temp_c) %>%
+  summarize( mare_process = round ( sum ( proc_rel_abs_error, na.rm = TRUE) / n(), 2),
+             mare_hybrid = round( sum( hyp_rel_abs_error, na.rm = TRUE ) / n(), 2) )
 
 cal_mare <- function(observe_data, predict_data){
-  rgnc_dat_filter %>%
-    mutate( diff_observed_predicted = abs (observe_data - predict_data ) / observe_data )  %>%
-    group_by("seg_id_nat") %>%
-    filter_all(all_vars(!is.infinite(.) ) ) %>%
-    summarize( mare = round( mean( diff_observed_predicted) , 2) )
+  mare <- mean((abs(observe_data - predict_data) / observe_data), na.rm = TRUE)
+  return(mare)
+}  
 
-  }         
-mare_process_model <- cal_mare(rgnc_dat_filter$temp_c, rgnc_dat_filter$sntemp_temp_c)
-mare_hybrid_model <- cal_mare(rgnc_dat_filter$temp_c, rgnc_dat_filter$rgcn2_full_temp_c)
+mare_process_model <- rgnc_dat_filter %>%
+  group_by(seg_id_nat) %>%
+  filter_all(all_vars(!is.infinite(.) ) ) %>%
+  summarize( mare = round( cal_mare(temp_c, sntemp_temp_c) , 2) )
 
-#compare_metric <- plyr:: join_all( list (mae_metric, rmse_metric, mare_metric_wo_inf),  by = 'seg_id_nat', type = 'left')
+mare_hybrid_modelzz <- rgnc_dat_filter %>%
+  group_by(seg_id_nat) %>%
+  filter_all(all_vars(!is.infinite(.) ) ) %>%
+  summarize( mare = round( cal_mare(temp_c, rgcn2_full_temp_c) , 2) )
+
+
+compare_metric <- plyr:: join_all( list (mae_process_model, mae_hybrid_model, rmse_process_model, rmse_hybrid_model, mare_process_model, mare_hybrid_model),  by = 'seg_id_nat', type = 'left')
+colnames(compare_metric)[2] <- "MAE_Process_Model"
+colnames(compare_metric)[3] <- "MAE_Hybrid_Model"
+colnames(compare_metric)[4] <- "RMSE_Process_Model"
+colnames(compare_metric)[5] <- "RMSE_Hybrid_Model"
+colnames(compare_metric)[6] <- "MARE_Process_Model"
+colnames(compare_metric)[7] <- "MARE_Hybrid_Model"
