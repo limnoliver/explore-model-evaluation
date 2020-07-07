@@ -49,12 +49,6 @@ rmse_hybrid_model <- rgnc_dat_filter %>%
 # Relative Parameter: Mean Absolute Relative Error (MARE) metric to compare both models prediction data vs observed data. We found MARE by: 1) dividing the difference between the predicted and observed data by the observed measurements. 2) sum the division answer. 3) divide by number of rows in grouped data.  
 
 ## mare metric when removing inf terms from ratio of temp diff and observed temp. 
-mare_metric <- rgnc_by_seg %>% 
-  mutate(proc_rel_abs_error = abs (process_mod_tem_diff) / temp_c ) %>% 
-  mutate(hyp_rel_abs_error = abs (hybrid_mod_tem_diff) / temp_c) %>%
-  summarize( mare_process = round ( sum ( proc_rel_abs_error, na.rm = TRUE) / n(), 2),
-             mare_hybrid = round( sum( hyp_rel_abs_error, na.rm = TRUE ) / n(), 2) )
-
 cal_mare <- function(observe_data, predict_data){
   mare <- mean((abs(observe_data - predict_data) / observe_data), na.rm = TRUE)
   return(mare)
@@ -62,12 +56,14 @@ cal_mare <- function(observe_data, predict_data){
 
 mare_process_model <- rgnc_dat_filter %>%
   group_by(seg_id_nat) %>%
-  filter_all(all_vars(!is.infinite(.) ) ) %>%
+  mutate(temp_c = ifelse( temp_c %in% 0, 0.1, temp_c) ) %>%
+  #filter_all(all_vars(!is.infinite(.) ) ) %>%
   summarize( mare = round( cal_mare(temp_c, sntemp_temp_c) , 2) )
 
-mare_hybrid_modelzz <- rgnc_dat_filter %>%
+mare_hybrid_model <- rgnc_dat_filter %>%
   group_by(seg_id_nat) %>%
-  filter_all(all_vars(!is.infinite(.) ) ) %>%
+  mutate(temp_c = ifelse( temp_c %in% 0, 0.1, temp_c) ) %>%
+  #filter_all(all_vars(!is.infinite(.) ) ) %>%
   summarize( mare = round( cal_mare(temp_c, rgcn2_full_temp_c) , 2) )
 
 
