@@ -15,7 +15,6 @@ str(dat)
 
 # removing rows with na values. 
 rgnc_dat_filter <- dat %>% filter(!is.na(temp_c), !is.na(rgcn2_full_temp_c))
-str(rgnc_dat_filter)
 summary(rgnc_dat_filter)
 rgnc_sig_freq_table <- table(rgnc_dat_filter$seg_id_nat) # check the number of segments in the data
 rgnc_site_freq_table <- table(rgnc_dat_filter$site_id)  # checking the number of sit_id 
@@ -44,10 +43,10 @@ mare_metric <- rgnc_by_seg %>%
 
 ## mare when turning temp_c values that are 0 into something really small, like 0.001.
 rgnc_seg_wo_zero <- rgnc_by_seg
-#rgnc_seg_wo_zero$temp_c[rgnc_seg_wo_zero$temp_c %in% 0] <-0.001
+#rgnc_seg_wo_zero$temp_c[rgnc_seg_wo_zero$temp_c %in% 0] <-0.1
 #which(rgnc_seg_wo_zero$temp_c == 0)
 mare_metric_wo_zero <-   rgnc_seg_wo_zero %>% 
-  mutate(temp_c = ifelse( temp_c %in% 0, 0.001, temp_c) ) %>%
+  mutate(temp_c = ifelse( temp_c %in% 0, 0.1, temp_c) ) %>%
   mutate(process_rel_abs_error_wo = abs(process_mod_tem_diff) / temp_c ) %>%
   mutate(hyp_rel_abs_error_wo = abs(hybrid_mod_tem_diff) / temp_c) %>% 
   summarize( mare_process_wo_zero = round( sum( process_rel_abs_error_wo, na.rm = TRUE) / n(), 2),
@@ -70,16 +69,16 @@ plot(mae_metric$seg_id_nat, mae_metric$mae_process, main = 'Process Model Evalua
 plot(mae_metric$seg_id_nat, mae_metric$mae_hybrid, main = 'Hybrid Model Evaluation', xlab = 'Segment ID', ylab = 'MAE')
 plot(rmse_metric$seg_id_nat, rmse_metric$rmse_process, main = 'Process Model Evaluation', xlab = 'Segment ID', ylab = 'RMSE')
 plot(rmse_metric$seg_id_nat, rmse_metric$rmse_hybrid, main = 'Hybrid Model Evaluation', xlab = 'Segment ID', ylab = 'RMSE')
-plot(mare_metric_wo_inf$seg_id_nat, mare_metric_wo_inf$mare_process_wo_inf, main = 'Process Model Evaluation', xlab = 'Segment ID', ylab = 'MARE')
-plot(mare_metric_wo_inf$seg_id_nat, mare_metric_wo_inf$mare_hybrid_wo_inf, main = 'Hybrid Model Evaluation', xlab = 'Segment ID', ylab = 'MARE')
+plot(mare_metric_wo_zero$seg_id_nat, mare_metric_wo_zero$mare_process_wo_zero, main = 'Process Model Evaluation', xlab = 'Segment ID', ylab = 'MARE')
+plot(mare_metric_wo_zero$seg_id_nat, mare_metric_wo_zero$mare_hybrid_wo_zero, main = 'Hybrid Model Evaluation', xlab = 'Segment ID', ylab = 'MARE')
 
 #Creating histogram to compare the different errors we calculated. 
 hist(mae_metric$mae_process, main = 'Process Model Evaluation', xlab = 'MAE')
 hist(mae_metric$mae_hybrid, main = 'Hybrid Model Evaluation', xlab = 'MAE')
 hist(rmse_metric$rmse_process, main = 'Process Model Evaluation', xlab = 'RMSE')
 hist(rmse_metric$rmse_hybrid, main = 'Hybrid Model Evaluation', xlab = 'RMSE')
-hist(mare_metric_wo_inf$mare_process_wo_inf, main = 'Process Model Evaluation', xlab = 'MARE')
-hist(mare_metric_wo_inf$mare_hybrid_wo_inf, main = 'Hyprid Model Evaluation', xlab = 'MARE')
+hist(mare_metric_wo_zero$mare_process_wo_zero, main = 'Process Model Evaluation', xlab = 'MARE')
+hist(mare_metric_wo_zero$mare_hybrid_wo_zero, main = 'Hyprid Model Evaluation', xlab = 'MARE')
 
 # Box-Plot to present summaries of Error Metrics
 par(mfrow = c (1, 1) )
