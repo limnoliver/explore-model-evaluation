@@ -10,8 +10,12 @@ dat <- readRDS('data/predicted_observed_temps.rds')
 rgnc_dat_filter <- dat %>% filter(!is.na(temp_c), !is.na(rgcn2_full_temp_c))
 str(rgnc_dat_filter)
 summary(rgnc_dat_filter)
-rgnc_by_seg <- rgnc_dat_filter %>% group_by(seg_id_nat)
-
+#grouping data by seg_id only.
+rgnc_by_seg <- rgnc_dat_filter %>% group_by(seg_id_nat) 
+summary(rgnc_by_seg)
+#grouping data by seg_id and date.
+rgnc_by_seg_date <- rgnc_dat_filter %>% group_by(seg_id_nat, year = lubridate::year(date)) 
+summary(rgnc_by_seg_date)
 ## Absolute Residual Error: calculating Mean Absolute Error (MAE) metric to compare both models prediction data vs observed data. We found the mae by finding the sum of the absolute value difference in predicted and observed temperature. Then divided the sum by the n row in grouped data.
 
 cal_mae <- function(observe_data, predict_data, n_digits = 2) {
@@ -44,3 +48,27 @@ mare <- rgnc_by_seg %>%
 
 compare_metric <- plyr:: join_all(list(mae, rmse, mare),  by = 'seg_id_nat', type = 'left')
 summary(compare_metric) 
+
+#Finding the max temperature for each segment. Also, finding the year associated with it. 
+max_temp_timing <- rgnc_by_seg_date %>% 
+  summarize(n_per_year = n(),
+            max_temp_c = max(temp_c),
+            max_timing_tempc = lubridate::yday(date[which.max(temp_c)]),
+            max_tempc_dat = date[which.max(temp_c)],
+            max_temp_proc = max(sntemp_temp_c),
+            max_timing_proc = lubridate::yday(date[which.max(sntemp_temp_c)]),
+            max_temp_proc_dat = date[which.max(sntemp_temp_c)],
+            max_temp_hyb = max(rgcn2_full_temp_c),
+            max_timing_hyb = lubridate::yday(date[which.max(rgcn2_full_temp_c)]),
+            max_temp_hyb_dat = date[which.max(rgcn2_full_temp_c)],
+            error_obs_proc = abs(max_temp_c - max_temp_proc),
+            error_obs_hyb = abs(max_temp_c - max_temp_hyb),
+            summer_complete = all(170:245 %in% lubridate::yday(date))) %>% 
+  filter(summer_complete) %>%
+  mutate(dev_mean_obs_proc = error_obs_proc - mean(error_obs_proc),
+         dev_mean_obs_hyb = error_obs_hyb - mean(error_obs_hyb))
+
+median_metric <-data.frame(median(max_temp_timing$error_obs_proc),
+                           median(max_temp_timing$error_obs_hyb))
+colnames(median_metric)[1] = "Process Model Max Temperature"
+colnames(median_metric)[2] = "Hybrid Model Max Temerature"
