@@ -22,9 +22,16 @@ rgnc_site_freq_table <- table(rgnc_dat_filter$site_id)  # checking the number of
 ## created a column for the difference in temperature measurements. then grouped data based on segment id. 
 rgnc_dat_filter$process_mod_tem_diff <- rgnc_dat_filter$temp_c - rgnc_dat_filter$sntemp_temp_c
 rgnc_dat_filter$hybrid_mod_tem_diff <- rgnc_dat_filter$temp_c - rgnc_dat_filter$rgcn2_full_temp_c
-number_seg <- length(rgnc_sig_freq_table) ## We will compare the number of segments to the nrow in each metrics. 
-number_site <- length(rgnc_site_freq_table)  # to check the number of sites. 
-rgnc_by_seg <- rgnc_dat_filter %>% group_by(seg_id_nat)
+## We will compare the number of segments to the nrow in each metrics.
+number_seg <- length(rgnc_sig_freq_table)  
+# to check the number of sites. 
+number_site <- length(rgnc_site_freq_table)  
+#grouping data by seg_id only.
+rgnc_by_seg <- rgnc_dat_filter %>% group_by(seg_id_nat) 
+summary(rgnc_by_seg)
+#grouping data by seg_id and date.
+rgnc_by_seg_date <- rgnc_dat_filter %>% group_by(seg_id_nat, year = lubridate::year(date)) 
+summary(rgnc_by_seg_date)
 
 ## Absolute Residual Error: calculating Mean Absolute Error (MAE) metric to compare both models prediction data vs observed data. We found the mae by finding the sum of the absolute value difference in predicted and observed temperature. Then divided the sum by the n row in grouped data.
 mae_metric <- rgnc_by_seg %>%   summarize(mae_process = round(sum(abs(process_mod_tem_diff), na.rm = TRUE)/ n(), 2),
@@ -81,3 +88,4 @@ hist(rmse_metric$rmse_process, main = 'Process Model Evaluation', xlab = 'RMSE')
 hist(rmse_metric$rmse_hybrid, main = 'Hybrid Model Evaluation', xlab = 'RMSE')
 hist(mare_metric_wo_zero$mare_process_wo_zero, main = 'Process Model Evaluation', xlab = 'MARE')
 hist(mare_metric_wo_zero$mare_hybrid_wo_zero, main = 'Hyprid Model Evaluation', xlab = 'MARE')
+
