@@ -61,14 +61,35 @@ max_temp_timing <- rgnc_by_seg_date %>%
             max_temp_hyb = max(rgcn2_full_temp_c),
             max_timing_hyb = lubridate::yday(date[which.max(rgcn2_full_temp_c)]),
             max_temp_hyb_dat = date[which.max(rgcn2_full_temp_c)],
-            error_obs_proc = abs(max_temp_c - max_temp_proc),
-            error_obs_hyb = abs(max_temp_c - max_temp_hyb),
+            error_temp_obs_proc = abs(max_temp_c - max_temp_proc),
+            error_time_obs_proc = abs(max_timing_tempc - max_timing_proc),
+            error_temp_obs_hyb = abs(max_temp_c - max_temp_hyb),
+            error_time_obs_hub = abs(max_timing_tempc - max_timing_hyb),
             summer_complete = all(170:245 %in% lubridate::yday(date))) %>% 
   filter(summer_complete) %>%
-  mutate(dev_mean_obs_proc = error_obs_proc - mean(error_obs_proc),
-         dev_mean_obs_hyb = error_obs_hyb - mean(error_obs_hyb))
+  mutate(dev_mean_obs_proc = error_temp_obs_proc - mean(error_temp_obs_proc),
+         dev_mean_obs_hyb = error_temp_obs_hyb - mean(error_temp_obs_hyb))
 
-median_metric <-data.frame(median(max_temp_timing$error_obs_proc),
-                           median(max_temp_timing$error_obs_hyb))
-colnames(median_metric)[1] = "Process Model Max Temperature"
-colnames(median_metric)[2] = "Hybrid Model Max Temerature"
+cal_max_temp_timing <- function(observe_data, predict_data, date) {
+  max_temp_observe_data = max(observe_data)
+  max_timing_observe_data = lubridate::yday(date[which.max(observe_data)])
+  max_observe_data_date = date[which.max(observe_data)]
+  max_temp_predict_data = max(predict_data)
+  max_timing_predict_data = lubridate::yday(date[which.max(predict_data)])
+  max_temp_predict_data_dat = date[which.max(predict_data)]
+  error_obs_pred = abs(max_temp_observe_data - max_temp_predict_data)
+  error_max_timing = abs(max_timing_observe_data - max_timing_predict_data)
+  summer_complete = all(170:245 %in% lubridate::yday(date)) %>% 
+    filter(summer_complete) %>%
+    mutate(dev_mean_max_temp = error_obs_pred - mean(error_obs_pred),
+           dev_mean_max_timing = error_max_timing - mean(error_max_timing))
+           
+}
+
+max_temp_timing_fun = rgnc_by_seg_date %>%  
+  summarize(max_obs_procc = cal_max_temp_timing(temp_c, sntemp_temp_c, date))
+  
+
+median_metric <-data.frame(Process_Model_Max_Temperature = median(max_temp_timing$error_obs_proc),
+                           Hybrid_Model_Max_Temerature = median(max_temp_timing$error_obs_hyb))
+
