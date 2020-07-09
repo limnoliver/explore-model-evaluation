@@ -64,7 +64,7 @@ max_temp_timing <- rgnc_by_seg_date %>%
             error_temp_obs_proc = abs(max_temp_c - max_temp_proc),
             error_time_obs_proc = abs(max_timing_tempc - max_timing_proc),
             error_temp_obs_hyb = abs(max_temp_c - max_temp_hyb),
-            error_time_obs_hub = abs(max_timing_tempc - max_timing_hyb),
+            error_time_obs_hyb = abs(max_timing_tempc - max_timing_hyb),
             summer_complete = all(170:245 %in% lubridate::yday(date))) %>% 
   filter(summer_complete) %>%
   mutate(dev_mean_obs_proc = error_temp_obs_proc - mean(error_temp_obs_proc),
@@ -86,10 +86,18 @@ cal_max_temp_timing <- function(observe_data, predict_data, date) {
            
 }
 
-max_temp_timing_fun = rgnc_by_seg_date %>%  
-  summarize(max_obs_procc = cal_max_temp_timing(temp_c, sntemp_temp_c, date))
+max_temp_timing_fun <- rgnc_by_seg_date %>%  
+  summarize(max_obs_procc = cal_max_temp_timing(temp_c, sntemp_temp_c, date),
+            max_obs_hyb = cal_max_temp_timing(temp_c, rgcn2_full_temp_c, date))
   
 
 median_metric <-data.frame(Process_Model_Max_Temperature = median(max_temp_timing$error_obs_proc),
                            Hybrid_Model_Max_Temerature = median(max_temp_timing$error_obs_hyb))
-
+## calculating Nash coefficient of efficiency (CE;Nash and Sutcliffe)
+cal_nash <- function(observe_data, predict_data, n_digits = 2){
+  nash = round(1 - (sum(observe_data - predict_data) ^ 2) / (sum(observe_data - mean(observe_data) ^2)), digits = n_digits)  
+}
+nse =rgnc_by_seg_date %>%
+  group_by(seg_id_nat, lubridate::year(date)) %>%
+  summarize(nse_process = cal_nash(temp_c, sntemp_temp_c),
+            nse_hybrid = cal_nash(temp_c, rgcn2_full_temp_c))
