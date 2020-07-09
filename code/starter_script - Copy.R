@@ -70,7 +70,7 @@ max_temp_timing <- rgnc_by_seg_date %>%
   mutate(dev_mean_obs_proc = error_temp_obs_proc - mean(error_temp_obs_proc),
          dev_mean_obs_hyb = error_temp_obs_hyb - mean(error_temp_obs_hyb))
 
-cal_max_temp_timing <- function(observe_data, predict_data, date) {
+cal_max_temp_timing <- function(observe_data, predict_data, doy_test = 170:245) {
   max_temp_observe_data = max(observe_data)
   max_timing_observe_data = lubridate::yday(date[which.max(observe_data)])
   max_observe_data_date = date[which.max(observe_data)]
@@ -79,16 +79,16 @@ cal_max_temp_timing <- function(observe_data, predict_data, date) {
   max_temp_predict_data_dat = date[which.max(predict_data)]
   error_obs_pred = abs(max_temp_observe_data - max_temp_predict_data)
   error_max_timing = abs(max_timing_observe_data - max_timing_predict_data)
-  summer_complete = all(170:245 %in% lubridate::yday(date)) %>% 
+  summer_complete = all(doy_test %in% lubridate::yday(date)) %>% 
     filter(summer_complete) %>%
     mutate(dev_mean_max_temp = error_obs_pred - mean(error_obs_pred),
            dev_mean_max_timing = error_max_timing - mean(error_max_timing))
            
 }
 
-max_temp_timing_fun <- rgnc_by_seg_date %>%  
-  summarize(max_obs_procc = cal_max_temp_timing(temp_c, sntemp_temp_c, date),
-            max_obs_hyb = cal_max_temp_timing(temp_c, rgcn2_full_temp_c, date))
+max_temp_timing_fun <- rgnc_by_seg_date %>% 
+  summarize(max_obs_procc = cal_max_temp_timing(temp_c, sntemp_temp_c),
+            max_obs_hyb = cal_max_temp_timing(temp_c, rgcn2_full_temp_c)) 
   
 
 median_metric <-data.frame(Process_Model_Max_Temperature = median(max_temp_timing$error_obs_proc),
@@ -101,3 +101,43 @@ nse =rgnc_by_seg_date %>%
   group_by(seg_id_nat, lubridate::year(date)) %>%
   summarize(nse_process = cal_nash(temp_c, sntemp_temp_c),
             nse_hybrid = cal_nash(temp_c, rgcn2_full_temp_c))
+## Calculating the exceedance metric. 
+# Using if statements. 
+cal_exceedance <- function(observe_data, predict_data, temp_threshold = 25.5){
+  if (observe_data >= temp_threshold & predict_data >= temp_threshold){
+    return("TRUE")
+  }else if (observe_data >= temp_threshold & predict_data < temp_threshold ){
+    return("False_negative")
+  }
+  else if (observe_data < temp_threshold & predict_data >= temp_threshold) {
+    return("False_positive ")
+  }
+}
+# Without if else statements. 
+cal_exceedance <- function(observe_data, predict_data, temp_threshold = 25.5){
+  true = observe_data >= temp_threshold & predict_data >= temp_threshold
+    False_negative = observe_data >= temp_threshold & predict_data < temp_threshold
+      False_positive = observe_data < temp_threshold & predict_data >= temp_threshold
+}
+## trying to use the exceedance function. 
+exc_test <- rgnc_by_seg %>%
+  mutate(proc_test = cal_exceedance(temp_c, sntemp_temp_c),
+         hyb_test =  cal_exceedance(temp_c, rgcn2_full_temp_c))
+
+exceedance_metric <- rgnc_by_seg %>%
+  summarize(proc_test = cal_exceedance(temp_c, sntemp_temp_c),
+            hyb_test =  cal_exceedance(temp_c, rgcn2_full_temp_c))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
