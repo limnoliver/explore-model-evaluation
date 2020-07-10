@@ -50,74 +50,51 @@ compare_metric <- plyr:: join_all(list(mae, rmse, mare),  by = 'seg_id_nat', typ
 summary(compare_metric) 
 
 #Finding the max temperature for each segment. Also, finding the year associated with it. 
-max_temp_timing <- rgnc_by_seg_date %>% 
-  summarize(n_per_year = n(),
-            max_temp_c = max(temp_c),
-            max_timing_tempc = lubridate::yday(date[which.max(temp_c)]),
-            max_tempc_dat = date[which.max(temp_c)],
-            max_temp_proc = max(sntemp_temp_c),
-            max_timing_proc = lubridate::yday(date[which.max(sntemp_temp_c)]),
-            max_temp_proc_dat = date[which.max(sntemp_temp_c)],
-            max_temp_hyb = max(rgcn2_full_temp_c),
-            max_timing_hyb = lubridate::yday(date[which.max(rgcn2_full_temp_c)]),
-            max_temp_hyb_dat = date[which.max(rgcn2_full_temp_c)],
-            error_temp_obs_proc = abs(max_temp_c - max_temp_proc),
-            error_time_obs_proc = abs(max_timing_tempc - max_timing_proc),
-            error_temp_obs_hyb = abs(max_temp_c - max_temp_hyb),
-            error_time_obs_hyb = abs(max_timing_tempc - max_timing_hyb),
-            summer_complete = all(170:245 %in% lubridate::yday(date))) %>% 
-  filter(summer_complete) %>%
-  mutate(dev_mean_obs_proc = error_temp_obs_proc - mean(error_temp_obs_proc),
-         dev_mean_obs_hyb = error_temp_obs_hyb - mean(error_temp_obs_hyb))
-
-cal_max_temp_timing <- function(observe_data, predict_data, doy_test = 170:245) {
-  max_temp_observe_data = max(observe_data)
-  max_timing_observe_data = lubridate::yday(date[which.max(observe_data)])
-  max_observe_data_date = date[which.max(observe_data)]
-  max_temp_predict_data = max(predict_data)
-  max_timing_predict_data = lubridate::yday(date[which.max(predict_data)])
-  max_temp_predict_data_dat = date[which.max(predict_data)]
-  error_obs_pred = abs(max_temp_observe_data - max_temp_predict_data)
-  error_max_timing = abs(max_timing_observe_data - max_timing_predict_data)
-  summer_complete = all(doy_test %in% lubridate::yday(date)) %>% 
-    filter(summer_complete) %>%
-    mutate(dev_mean_max_temp = error_obs_pred - mean(error_obs_pred),
-           dev_mean_max_timing = error_max_timing - mean(error_max_timing))
-           
+cal_max_temp_timing <- function(data_in, observe_col, predict_col, date_col,  date_range = 170:245) {
+  max_fun_out <- data_in %>%
+    summarize(max_temp_obs = max({{observe_col}}),
+              max_timing_obs = lubridate::yday(date[which.max({{observe_col}})]),
+              max_temp_mod = max({{predict_col}}),
+              max_timing_mod = lubridate::yday(date[which.max({{predict_col}})]),
+              summer_complete = all({{date_range}} %in% lubridate::yday({{date_col}}))) %>%
+    mutate(error_obs_pred = abs(max_temp_obs - max_temp_mod),
+           error_max_timing = abs(max_timing_obs - max_timing_mod )) %>%
+    filter(summer_complete)
+  return(max_fun_out)
 }
 
-max_temp_timing_fun <- rgnc_by_seg_date %>% 
-  summarize(max_obs_procc = cal_max_temp_timing(temp_c, sntemp_temp_c),
-            max_obs_hyb = cal_max_temp_timing(temp_c, rgcn2_full_temp_c)) 
-  
-
-median_metric <-data.frame(Process_Model_Max_Temperature = median(max_temp_timing$error_obs_proc),
-                           Hybrid_Model_Max_Temerature = median(max_temp_timing$error_obs_hyb))
+max_process_metrics = cal_max_temp_timing(data_in = rgnc_by_seg_date, 
+                                           observe_col = temp_c, predict_col = sntemp_temp_c, 
+                                           date_col = date)
+max_hybrid_metrics = cal_max_temp_timing(data_in = rgnc_by_seg_date, 
+                                           observe_col = temp_c, predict_col = rgcn2_full_temp_c, 
+                                           date_col = date)
 ## calculating Nash coefficient of efficiency (CE;Nash and Sutcliffe)
-cal_nash <- function(observe_data, predict_data, n_digits = 2){
-  nash = round(1 - (sum(observe_data - predict_data) ^ 2) / (sum(observe_data - mean(observe_data) ^2)), digits = n_digits)  
+cal_nash <- function(observe_col, predict_col, n_digits = 2){
+  nash = round(1 - (sum(observe_col - predict_col) ^ 2) / (sum(observe_col - mean(observe_col) ^2)), digits = n_digits)  
 }
-nse =rgnc_by_seg_date %>%
+# nse values > 1 which mean the metric isn't calculting correctly.
+nse_metric =rgnc_by_seg_date %>%
   group_by(seg_id_nat, lubridate::year(date)) %>%
   summarize(nse_process = cal_nash(temp_c, sntemp_temp_c),
             nse_hybrid = cal_nash(temp_c, rgcn2_full_temp_c))
-## Calculating the exceedance metric. 
-# Using if statements. 
-cal_exceedance <- function(observe_data, predict_data, temp_threshold = 25.5){
-  if (observe_data >= temp_threshold & predict_data >= temp_threshold){
+## Calculating the exceedence metric. 
+# Using if statements.  Not working
+cal_exceedance_NOT <- function(observe_col, predict_col, temp_threshold = 25.5){
+if ({{observe_col}} >= temp_threshold & {{predict_col}} >= temp_threshold){
     return("TRUE")
-  }else if (observe_data >= temp_threshold & predict_data < temp_threshold ){
+  }else if ({{observe_col}} >= temp_threshold & {{predict_col}} < temp_threshold ){
     return("False_negative")
   }
-  else if (observe_data < temp_threshold & predict_data >= temp_threshold) {
+  else if ({{observe_col}} < temp_threshold & {{predict_col}} >= temp_threshold) {
     return("False_positive ")
   }
 }
-# Without if else statements. 
-cal_exceedance <- function(observe_data, predict_data, temp_threshold = 25.5){
-  true = observe_data >= temp_threshold & predict_data >= temp_threshold
-    False_negative = observe_data >= temp_threshold & predict_data < temp_threshold
-      False_positive = observe_data < temp_threshold & predict_data >= temp_threshold
+# Without if else statements. Working but not producing the desired output. 
+cal_exceedance <- function(observe_col, predict_col, temp_threshold = 25.5){
+  true = observe_col >= temp_threshold & predict_col >= temp_threshold
+  False_negative = observe_col >= temp_threshold & predict_col < temp_threshold
+  False_positive = observe_col < temp_threshold & predict_col >= temp_threshold
 }
 ## trying to use the exceedance function. 
 exc_test <- rgnc_by_seg %>%
@@ -127,17 +104,5 @@ exc_test <- rgnc_by_seg %>%
 exceedance_metric <- rgnc_by_seg %>%
   summarize(proc_test = cal_exceedance(temp_c, sntemp_temp_c),
             hyb_test =  cal_exceedance(temp_c, rgcn2_full_temp_c))
-
-
-
-
-
-
-
-
-
-
-
-
 
 
