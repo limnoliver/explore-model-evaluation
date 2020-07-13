@@ -50,16 +50,14 @@ compare_metric <- plyr:: join_all(list(mae, rmse, mare),  by = 'seg_id_nat', typ
 summary(compare_metric) 
 
 #Finding the max temperature for each segment. Also, finding the year associated with it. 
-cal_max_temp_timing <- function(data_in, observe_col, predict_col, date_col,  date_range = 170:245) {
+cal_max_temp_timing <- function(data_in, observe_col, predict_col, date_col,  date_range = 170:245, n_digits = 2) {
   max_fun_out <- data_in %>%
     summarize(max_temp_obs = max({{observe_col}}),
               max_timing_obs = lubridate::yday(date[which.max({{observe_col}})]),
               max_temp_mod = max({{predict_col}}),
-              max_timing_mod = lubridate::yday(date[which.max({{predict_col}})]),
-              summer_complete = all({{date_range}} %in% lubridate::yday({{date_col}}))) %>%
-    mutate(error_obs_pred = abs(max_temp_obs - max_temp_mod),
-           error_max_timing = abs(max_timing_obs - max_timing_mod )) %>%
-    filter(summer_complete)
+              max_timing_mod = lubridate::yday(date[which.max({{predict_col}})])) %>%
+    mutate(error_obs_pred = round(abs(max_temp_obs - max_temp_mod), digits = n_digits),
+           error_max_timing = abs(max_timing_obs - max_timing_mod))
   return(max_fun_out)
 }
 
@@ -69,40 +67,50 @@ max_process_metrics = cal_max_temp_timing(data_in = rgnc_by_seg_date,
 max_hybrid_metrics = cal_max_temp_timing(data_in = rgnc_by_seg_date, 
                                            observe_col = temp_c, predict_col = rgcn2_full_temp_c, 
                                            date_col = date)
-## calculating Nash coefficient of efficiency (CE;Nash and Sutcliffe)
+
+## Creating a funcion to calculate Nash coefficient of efficiency (Nash):
 cal_nash <- function(observe_col, predict_col, n_digits = 2){
-  nash = round(1 - (sum(observe_col - predict_col) ^ 2) / (sum(observe_col - mean(observe_col) ^2)), digits = n_digits)  
+  nash = round(1 - ((sum((observe_col - predict_col) ^ 2)) / (sum((observe_col - mean(observe_col)) ^2))), digits = n_digits)  
 }
-# nse values > 1 which mean the metric isn't calculting correctly.
-nse_metric =rgnc_by_seg_date %>%
-  group_by(seg_id_nat, lubridate::year(date)) %>%
+# calculating Nash coefficient of efficiency (CE;Nash and Sutcliffe) values: 
+nse_metric =rgnc_by_seg %>%
   summarize(nse_process = cal_nash(temp_c, sntemp_temp_c),
             nse_hybrid = cal_nash(temp_c, rgcn2_full_temp_c))
-## Calculating the exceedence metric. 
-# Using if statements.  Not working
-cal_exceedance_NOT <- function(observe_col, predict_col, temp_threshold = 25.5){
-if ({{observe_col}} >= temp_threshold & {{predict_col}} >= temp_threshold){
-    return("TRUE")
-  }else if ({{observe_col}} >= temp_threshold & {{predict_col}} < temp_threshold ){
-    return("False_negative")
+# To view the data associated with this segment we can filter through the dataset:
+View(filter(rgnc_dat_filter, seg_id_nat %in% 1549)) #filter(data, column_name %in% the certian group)
+
+## Calculating the exceedance metric. 
+# Using if statements.
+calc_exceedance <- function(observe_col, predict_col, metric, temp_threshold = 25.5){
+  observe_exceeds <- observe_col > temp_threshold
+  predict_exceeds <- predict_col > temp_threshold
+  
+  if (metric == 'prop_correct') {
+    return(round(sum(observe_exceeds == predict_exceeds) / n(), 2))
+  } else if (metric == 'prop_false_neg') {
+    return(round(sum(observe_exceeds == TRUE & predict_exceeds == FALSE) / n(), 2))
+  } else if (metric == 'prop_false_pos') {
+    return(round(sum(observe_exceeds == FALSE & predict_exceeds == TRUE) / n(), 2))
   }
-  else if ({{observe_col}} < temp_threshold & {{predict_col}} >= temp_threshold) {
-    return("False_positive ")
+  else if (metric == 'prop_true_pos'){
+    return(round(sum(observe_exceeds == TRUE & predict_exceeds == TRUE) / n(), 2))
+  }
+  else if (metric == 'prop_true_neg') {
+    return(round(sum(observe_exceeds == FALSE & predict_exceeds == FALSE) / n(), 2))
   }
 }
-# Without if else statements. Working but not producing the desired output. 
-cal_exceedance <- function(observe_col, predict_col, temp_threshold = 25.5){
-  true = observe_col >= temp_threshold & predict_col >= temp_threshold
-  False_negative = observe_col >= temp_threshold & predict_col < temp_threshold
-  False_positive = observe_col < temp_threshold & predict_col >= temp_threshold
-}
-## trying to use the exceedance function. 
-exc_test <- rgnc_by_seg %>%
-  mutate(proc_test = cal_exceedance(temp_c, sntemp_temp_c),
-         hyb_test =  cal_exceedance(temp_c, rgcn2_full_temp_c))
-
-exceedance_metric <- rgnc_by_seg %>%
-  summarize(proc_test = cal_exceedance(temp_c, sntemp_temp_c),
-            hyb_test =  cal_exceedance(temp_c, rgcn2_full_temp_c))
-
+# Implementing exceedance function 
+exceeds <- rgnc_dat_filter %>%
+  summarize(n = n(),
+            n_exceeds = sum(temp_c > 25.5),
+            process_exceeds_true = calc_exceedance(temp_c, sntemp_temp_c, 'prop_correct'),
+            hybrid_exceeds_true = calc_exceedance(temp_c, rgcn2_full_temp_c, 'prop_correct'),
+            process_exceeds_false_neg = calc_exceedance(temp_c, sntemp_temp_c, 'prop_false_neg'),
+            hybrid_exceeds_false_neg = calc_exceedance(temp_c, rgcn2_full_temp_c, 'prop_false_neg'),
+            process_exceeds_false_pos = calc_exceedance(temp_c, sntemp_temp_c, 'prop_false_pos'),
+            hybrid_exceeds_false_pos = calc_exceedance(temp_c, rgcn2_full_temp_c, 'prop_false_pos'),
+            process_exceeds_true_pos = calc_exceedance(temp_c, sntemp_temp_c, 'prop_true_pos'),
+            hybrid_exceeds_true_pos= calc_exceedance(temp_c, rgcn2_full_temp_c, 'prop_true_pos'),
+            process_exceeds_true_neg = calc_exceedance(temp_c, sntemp_temp_c, 'prop_true_neg'),
+            hybrid_exceeds_true_neg = calc_exceedance(temp_c, sntemp_temp_c, 'prop_true_neg'))
 
