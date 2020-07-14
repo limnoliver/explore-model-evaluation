@@ -1,0 +1,94 @@
+# Functions to calculate metrics for model evaluation.
+
+# Mean Absolute Error (MAE) metric
+calc_mae <- function(observe_data, predict_data, n_digits = 2) {
+  #' Mean Absolute Error (MAE)
+  #' @description  Calculates MAE metric to compare the observed data to the modeled data.
+  #' @details Finds the mean of the absolute value error (difference between the observed and modeled data), then rounds the answer two decimal places. 
+  #' @param observe_data the observed data. 
+  #' @param predict_data the modeled predicted data.
+  #' @param n_digits the number of decimals of places to round the calculated MAE value. The function rounds to 2 decimal places by default. 
+  mae = round((mean(abs(observe_data - predict_data), na.rm = TRUE )), digits = n_digits)
+  return(mae)
+}
+
+# Root Mean Square Error (RMSE)
+calc_rmse <- function(observe_data, predict_data, n_digits = 2 ){
+  #' Root Mean Square Error (RMSE)
+  #' @description Calculates the RMSE metric to compare the observed data and modeled data.
+  #' @details Finds the square root of the squared error (difference between the observed and modeled data), then rounds the answer two decimal places. 
+  #' @param observe_data the observed data. 
+  #' @param predict_data the modeled predicted data.
+  #' @param n_digits the number of decimals of places to round the calculated RMSE value. The function rounds to 2 decimal places by default.
+  rmse <- round(sqrt(mean((observe_data - predict_data) ^2, na.rm = TRUE )), digits = n_digits)
+  return(rmse)
+}
+
+# Mean Absolute Relative Error (MARE)  
+calc_mare <- function(observe_data, predict_data, n_digits = 2){
+  #' Mean Absolute Relative Error (MARE)
+  #' @description Calculates MARE by finding the ratio of the overall agreement between the observed data and modeled data.
+  #' @details Finds the mean of the ratio between the absolute value of the error (the difference between observed and predicted data) and the observed data. It is often expressed in percentage terms.
+  #' @param observe_data the observed data. 
+  #' @param predict_data the modeled predicted data.
+  #' @param n_digits the number of decimals of places to round the calculated mare value. The function rounds to 2 decimal places by default. 
+  mare <- round(mean((abs(observe_data - predict_data) / observe_data), na.rm = TRUE), digits = n_digits)
+  return(mare)
+} 
+
+#Finding the max temperature for each segment. Also, finding the year associated with it. 
+calc_max_timing <- function(data_in, observe_col, predict_col, date_col,  date_range = 170:245, n_digits = 2) {
+  #' Maximum Observation and Time 
+  #' @description Calculates the error between the maximum observed and modeled data values. And it calculates the occurrence error (observed occurrence and predicted occurrence) that is associated with the found maximum data values. 
+  #' @details Finds the maximum observed and modeled data values. While providing the day of the year associated with the occurrence of maximum data values. Finally, this function will calculate the error (the difference between observed and predicted data) between the maximum values, and the error for the occurrence (day of the year) of the maximum values.
+  #' @param data_in A dataframe or table.  
+  #' @param observe_col the observed data. 
+  #' @param predict_col the modeled predicted data.
+  #' @param date_col vector of date class
+  #' @param date_range the start day and end day of the year. The date_range target is set to start on 170 day and end on the 245 day of the year by default.  
+  #' @param n_digits the number of decimal of places to round the calculated mare value. The function rounds to 2 decimal places by default. 
+  max_fun_out <- data_in %>%
+    summarize(max_obs = max({{observe_col}}),
+              max_timing_obs = lubridate::yday(date[which.max({{observe_col}})]),
+              max_mod = max({{predict_col}}),
+              max_timing_mod = lubridate::yday(date[which.max({{predict_col}})])) %>%
+    mutate(error_obs_pred = round(abs(max_obs - max_mod), digits = n_digits),
+           error_max_timing = abs(max_timing_obs - max_timing_mod))
+  return(max_fun_out)
+}
+############################################################################################################
+## Creating a function to calculate Nash coefficient of efficiency (Nash):
+calc_nash <- function(observe_col, predict_col, n_digits = 2){
+  #' Coefficient of Efficiency Nash
+  #' @description Calculates the overall level of agreement between the observed and modeled data. 
+  #' @details Records 1 minus the ratio of the sum of error (the difference between observed and predicted data) and the sum of observed data deviation from the mean of the observed data.
+  #' @param observe_col the observed data. 
+  #' @param predict_col the modeled predicted data.
+  #' @param n_digits the number of decimal of places to round the calculated mare value. The function rounds to 2 decimal places by default. 
+  nash = round(1 - ((sum((observe_col - predict_col) ^ 2)) / (sum((observe_col - mean(observe_col)) ^2))), digits = n_digits)  }
+
+## Calculating the exceedance metric to check if the model predicted the temperature exceedance correctly
+# Using if statements.
+calc_exceedance <- function(observe_col, predict_col, metric, threshold = 25.5){
+  #' Threshold Exceedance Metric
+  #' @description Calculates the overall level of agreement between observed and predicted exceedances of the target threshold.
+  #' @details The function returns a summary of the number of observed and modeled data exceeding the target threshold. The function also returns the proportion of true positive and true negative: the model correctly predicted the exceedance or not exceedance of the target threshold. It returns the proportion false-negative: the model falsely predicted not exceedance of the target threshold. And the function returns the proportion of false-positive:  the model falsely predicted the exceedance of the target threshold.
+  #' @param observe_col the observed data. 
+  #' @param predict_col the modeled predicted data.
+  #' @param metric the target metric: proportion true positive, proportion true negative, proportion false-negative, and proportion false-positive
+  #' @param threshold the target threshold is set to 25.5 by default. The user is able to adjust the threshold to suit the desired model evaluation.   
+  observe_exceeds <- observe_col > threshold
+  predict_exceeds <- predict_col > threshold
+  
+  if (metric == 'prop_false_neg') {
+    return(round(sum(observe_exceeds == TRUE & predict_exceeds == FALSE) / n(), 2))
+  } else if (metric == 'prop_false_pos') {
+    return(round(sum(observe_exceeds == FALSE & predict_exceeds == TRUE) / n(), 2))
+  }
+  else if (metric == 'prop_true_pos'){
+    return(round(sum(observe_exceeds == TRUE & predict_exceeds == TRUE) / n(), 2))
+  }
+  else if (metric == 'prop_true_neg') {
+    return(round(sum(observe_exceeds == FALSE & predict_exceeds == FALSE) / n(), 2))
+  }
+}
