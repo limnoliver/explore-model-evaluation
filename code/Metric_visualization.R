@@ -32,7 +32,7 @@ summary(nse_stream_type)
 #plotting rmse metric
 rmse_plot  <- 
   ggplot(rmse_stream_type, aes(x = RMSE_Process_Model, y = RMSE_Hybrid_Model)) +
-  geom_point(aes(colour = reservoir_status, size = n_obs), alpha = 0.45) +
+  geom_point(aes(colour = reservoir_status, size = n_obs), alpha = 0.15) +
   geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
   #geom_smooth(method = "lm") +
   scale_x_continuous(limits = c(0,9), breaks = 0:9) +
@@ -44,13 +44,16 @@ rmse_plot  <-
     y = "Hybrid Model RMSE"
   ) +
    scale_color_manual(values = c("grey27", "red")) + 
-    theme(plot.title = element_text(hjust =  0.5, size = 18, face = "bold"),
-          axis.title = element_text(size = 14, face = "bold"))
+   theme_bw() +  # to remove the gray background.
+    theme(plot.title = element_text(hjust =  0.15,vjust = 0.50, size = 10, face = "bold"),
+          axis.title = element_text(size = 6, face = "bold"),
+          legend.title = element_text(size = 6),
+          legend.text = element_text(size = 6))
 
 #plotting nse metric
 nse_plot  <-
   ggplot(nse_stream_type, aes(x = nse_process, y = nse_hybrid)) +
-    geom_point(aes(colour = reservoir_status, size = n_obs), alpha = 0.45) +
+    geom_point(aes(colour = reservoir_status, size = n_obs), alpha = 0.15) +
     geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
     scale_x_continuous(limits = c(0, 1.25)) +
     scale_y_continuous(limits = c(0, 1.25)) +
@@ -61,7 +64,11 @@ nse_plot  <-
       y = "Hybrid Model NSE"
     ) +
     scale_color_manual(values = c("grey27", "red")) + 
-    theme(plot.title = element_text(hjust =  0.5, size = 18, face = "bold"),
-          axis.title = element_text(size = 14, face = "bold"))
-ggsave("rmse_plot.png", rmse_plot, height = 30, width = 25, units = "cm", dpi = 600, type = "cairo-png")
-ggsave("nse_plot.png", nse_plot, height = 30, width = 25, units = "cm", dpi = 600, type= "cairo-png")
+    theme_bw() +   
+    theme(plot.title = element_text(hjust =  0.15, vjust = 0.70, size = 10, face = "bold"),
+          axis.title = element_text(size = 6, face = "bold"),
+          legend.title = element_text(size = 6),
+          legend.text = element_text(size = 6))
+
+ggsave("rmse_plot.png", rmse_plot, height = 6, width = 4)
+ggsave("nse_plot.png", nse_plot, height = 6, width = 4)
