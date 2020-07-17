@@ -89,3 +89,41 @@ hist(rmse_metric$rmse_hybrid, main = 'Hybrid Model Evaluation', xlab = 'RMSE')
 hist(mare_metric_wo_zero$mare_process_wo_zero, main = 'Process Model Evaluation', xlab = 'MARE')
 hist(mare_metric_wo_zero$mare_hybrid_wo_zero, main = 'Hyprid Model Evaluation', xlab = 'MARE')
 
+#Finding the max temperature for each segment. Also, finding the year associated with it. 
+max_temp_timing <- rgnc_by_seg_date %>% 
+  summarize(n_per_year = n(),
+            max_temp_c = max(temp_c),
+            max_timing_tempc = lubridate::yday(date[which.max(temp_c)]),
+            max_tempc_dat = date[which.max(temp_c)],
+            max_temp_proc = max(sntemp_temp_c),
+            max_timing_proc = lubridate::yday(date[which.max(sntemp_temp_c)]),
+            max_temp_proc_dat = date[which.max(sntemp_temp_c)],
+            max_temp_hyb = max(rgcn2_full_temp_c),
+            max_timing_hyb = lubridate::yday(date[which.max(rgcn2_full_temp_c)]),
+            max_temp_hyb_dat = date[which.max(rgcn2_full_temp_c)],
+            error_temp_obs_proc = abs(max_temp_c - max_temp_proc),
+            error_time_obs_proc = abs(max_timing_tempc - max_timing_proc),
+            error_temp_obs_hyb = abs(max_temp_c - max_temp_hyb),
+            error_time_obs_hyb = abs(max_timing_tempc - max_timing_hyb),
+            summer_complete = all(170:245 %in% lubridate::yday(date))) %>% 
+  filter(summer_complete) %>%
+  mutate(dev_mean_obs_proc = error_temp_obs_proc - mean(error_temp_obs_proc),
+         dev_mean_obs_hyb = error_temp_obs_hyb - mean(error_temp_obs_hyb))
+
+median_metric <-data.frame(Process_Model_Max_Temperature = median(max_temp_timing$error_obs_proc),
+                           Hybrid_Model_Max_Temerature = median(max_temp_timing$error_obs_hyb))
+# Not working function to fund the max temperature and timing.
+cal_max_temp_timing <- function(observe_data, predict_data, doy_test = 170:245) {
+  max_temp_observe_data = max(observe_data)
+  max_timing_observe_data = lubridate::yday(date[which.max(observe_data)])
+  max_observe_data_date = date[which.max(observe_data)]
+  max_temp_predict_data = max(predict_data)
+  max_timing_predict_data = lubridate::yday(date[which.max(predict_data)])
+  max_temp_predict_data_dat = date[which.max(predict_data)]
+  error_obs_pred = abs(max_temp_observe_data - max_temp_predict_data)
+  error_max_timing = abs(max_timing_observe_data - max_timing_predict_data)
+  summer_complete = all(doy_test %in% lubridate::yday(date)) %>% 
+    filter(summer_complete) %>%
+    mutate(dev_mean_max_temp = error_obs_pred - mean(error_obs_pred),
+           dev_mean_max_timing = error_max_timing - mean(error_max_timing))
+}
