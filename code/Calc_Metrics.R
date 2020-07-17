@@ -70,7 +70,8 @@ calc_nash <- function(observe_col, predict_col, n_digits = 2){
   #' @param predict_col the modeled predicted data column.
   #' @param n_digits the number of decimal of places to round the calculated mare value. The function rounds to 2 decimal places by default. 
   #' @return A dataframe or table same class as input data.
-  nash = round(1 - ((sum((observe_col - predict_col) ^ 2)) / (sum((observe_col - mean(observe_col)) ^2))), digits = n_digits)  }
+  nash = round(1 - ((sum((observe_col - predict_col) ^ 2)) / (sum((observe_col - mean(observe_col)) ^2))), digits = n_digits)  
+}
 
 ## Exceedance metric
 calc_exceedance <- function(observe_col, predict_col, metric, threshold = 25.5){

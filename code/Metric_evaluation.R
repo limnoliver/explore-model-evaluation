@@ -1,4 +1,5 @@
-# an example of paired predictions and observations
+#Implementing the metrics function to evaluate the process and hybrid models. 
+#an example of paired predictions and observations
 library(dplyr)
 dat <- readRDS('data/predicted_observed_temps.rds')
 # note that SNTemp predictions (uncalibrated process model)
@@ -13,6 +14,7 @@ summary(rgnc_dat_filter)
 #grouping data by seg_id only.
 rgnc_by_seg <- rgnc_dat_filter %>% group_by(seg_id_nat) 
 summary(rgnc_by_seg)
+print(rgnc_by_seg, n = 5)
 #grouping data by seg_id and date.
 rgnc_by_seg_date <- rgnc_dat_filter %>% group_by(seg_id_nat, year = lubridate::year(date)) 
 summary(rgnc_by_seg_date)
