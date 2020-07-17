@@ -36,7 +36,7 @@ rmse_plot  <-
   geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
   #geom_smooth(method = "lm") +
   scale_x_continuous(limits = c(0,9), breaks = 0:9) +
-  scale_y_continuous(limits = c (0, 7), breaks = 0:7)+
+  scale_y_continuous(limits = c (0, 9), breaks = 0:9)+
   coord_fixed() + 
     labs(
     title = "Comparison Between Process and Hybrid Model RMSEs",
@@ -44,9 +44,9 @@ rmse_plot  <-
     y = "Hybrid Model RMSE"
   ) +
    scale_color_manual(values = c("grey27", "red")) + 
-    theme(plot.title = element_text(hjust =  0.5, size = 20, face = "bold"),
+    theme(plot.title = element_text(hjust =  0.5, size = 18, face = "bold"),
           axis.title = element_text(size = 14, face = "bold"))
-rmse_plot
+
 #plotting nse metric
 nse_plot  <-
   ggplot(nse_stream_type, aes(x = nse_process, y = nse_hybrid)) +
@@ -61,6 +61,7 @@ nse_plot  <-
       y = "Hybrid Model NSE"
     ) +
     scale_color_manual(values = c("grey27", "red")) + 
-    theme(plot.title = element_text(hjust =  0.5, size = 20, face = "bold"),
+    theme(plot.title = element_text(hjust =  0.5, size = 18, face = "bold"),
           axis.title = element_text(size = 14, face = "bold"))
-nse_plot
+ggsave("rmse_plot.png", rmse_plot, height = 30, width = 25, units = "cm", dpi = 600, type = "cairo-png")
+ggsave("nse_plot.png", nse_plot, height = 30, width = 25, units = "cm", dpi = 600, type= "cairo-png")
