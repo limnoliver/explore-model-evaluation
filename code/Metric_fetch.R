@@ -2,6 +2,8 @@
 #an example of paired predictions and observations
 library(dplyr)
 dat <- readRDS('data/predicted_observed_temps.rds')
+predicted_observed_temps_long_dat <- readRDS('data/predicted_observed_temps_long.rds')
+summary(long_dat)
 # note that SNTemp predictions (uncalibrated process model)
 # have predictions for all places/times
 # here you just have the test period from the hybrid model (rgcn2_full_temp_c)
@@ -31,7 +33,7 @@ rmse <- rgnc_by_seg %>%
 
 # Mean Absolute Relative Error (MARE) 
 mare <- rgnc_by_seg %>%
-  mutate(temp_c = ifelse( temp_c %in% 0, 0.1, temp_c)) %>%
+  #mutate(temp_c = ifelse( temp_c %in% 0, 0.1, temp_c)) %>%
   summarize( MARE_Process_Model = calc_mare(temp_c, sntemp_temp_c),
              MARE_Hybrid_Model = calc_mare(temp_c, rgcn2_full_temp_c))
 

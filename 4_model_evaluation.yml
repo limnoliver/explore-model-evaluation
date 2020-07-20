@@ -5,7 +5,10 @@ packages:
   - scipiper
 
 sources:
-  -
+  - code/Metric_fetch.R
+  - code/Metrics_process.R
+  - code/Metric_visualize.R
+  - code/Metric_calculate.R
 
 targets:
   4_model_evaluation:
@@ -27,7 +30,7 @@ targets:
 
   # exceedance metrics
   4_model_evaluation/out/exceedance_metrics_all_obs.csv:
-    command:
+    command: calc_all_metrics(dat_in = predicted_observed_temps_long_dat, grouping = NA)
 
   4_model_evaluation/out/exceedance_metrics_by_seg.csv:
     command:
@@ -40,4 +43,4 @@ targets:
 
   # max timing and magnitude exceedance_metrics_by_month
   4_model_evaluation/out/max_metrics_by_seg_year.csv:
-    command:
+    command: calc_max_metric(predicted_observed_temps_long_dat)
