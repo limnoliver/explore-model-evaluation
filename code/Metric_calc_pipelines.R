@@ -1,16 +1,18 @@
 ## Creating function to use the metrics function for future input into the delaware project pipeline
 
-cal_max_metric <- function(dat_in, grouping){
-  if (is.na(grouping)){
-    dat_mod = dat_in
-  } else {
-    dat_mod <- dat_in %>%
-      group_by(seg_id_nat, lubridate::year(date))
-  }
+calc_max_metric <- function(dat_in, grouping, date_range = 170:245){
+  dat_mod <- dat_in %>%
+      group_by(seg_id_nat, lubridate::year(date)) 
   
-  max_metric <- dat_mod %>%
-    calc_max_timing(  data_, observe_col, predict_col, date_col,  date_range = 170:245, n_digits = 2)
+  max_metric <- 
+    calc_max_timing(data_in = dat_mod, 
+                    observe_col = temp_c, predict_col = sntemp_temp_c, 
+                    date_col = date)
+  return(max_metric)
 }
+
+
+
 
 calc_all_metrics <- function(dat_in, grouping) {
   
