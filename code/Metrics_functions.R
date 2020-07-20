@@ -55,9 +55,11 @@ calc_max_timing <- function(data_in, observe_col, predict_col, date_col,  date_r
     summarize(max_obs = max({{observe_col}}),
               max_timing_obs = lubridate::yday(date[which.max({{observe_col}})]),
               max_mod = max({{predict_col}}),
-              max_timing_mod = lubridate::yday(date[which.max({{predict_col}})])) %>%
+              max_timing_mod = lubridate::yday(date[which.max({{predict_col}})]),
+              summer_complete = all(date_range %in% lubridate::yday(date))) %>%
+    filter(summer_complete) %>%
     mutate(error_obs_pred = round(abs(max_obs - max_mod), digits = n_digits),
-           error_max_timing = abs(max_timing_obs - max_timing_mod))
+           error_max_timing = abs(max_timing_obs - max_timing_mod)) 
   return(max_fun_out)
 }
 
