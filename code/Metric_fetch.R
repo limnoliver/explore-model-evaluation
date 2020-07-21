@@ -41,10 +41,10 @@ compare_metric <- plyr:: join_all(list(mae, rmse, mare),  by = 'seg_id_nat', typ
 summary(compare_metric) 
 
 #Finding the max temperature for each segment and year
-max_process_metrics = calc_max_timing(data_in = rgnc_by_seg_date, 
+max_process_metrics = calc_timing_max(data_in = rgnc_by_seg_date, 
                                            observe_col = temp_c, predict_col = sntemp_temp_c, 
                                            date_col = date)
-max_hybrid_metrics = calc_max_timing(data_in = rgnc_by_seg_date, 
+max_hybrid_metrics = calc_timing_max(data_in = rgnc_by_seg_date, 
                                            observe_col = temp_c, predict_col = rgcn2_full_temp_c, 
                                            date_col = date)
 
