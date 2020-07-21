@@ -3,16 +3,16 @@
 # Calls the four metrics functions (mae, rmse, mare, and nash). This function accepts 2 arguments data-in and grouping, the inputted data will be grouped by model to suit the data we're working with. The grouping arguments accepts 'NA' for no grouping, or any other grouping such as by segment, month, year, etc. We call the four metrics function to produce a dataframe with metrics of interest.  
 calc_all_metric <- function(dat_in, grouping) {
   dat_in <- dat_in %>%
-    #mutate(year = lubridate::year(date),
-     #      month = lubridate::month(date)) %>%
+    mutate(year = lubridate::year(date),
+           month = lubridate::month(date)) %>%
     group_by(model)
-
-  group_test <- deparse(substitute({{grouping}}))
+  
+  group_test <- deparse(substitute(grouping))
   if (group_test == 'NA') {
     dat_mod <- dat_in
   } else {
     dat_mod <- dat_in %>%
-      group_by({{grouping}})
+      group_by(model, {{grouping}})
   }
   metrics <- dat_mod %>%
     summarize(mae = calc_mae(observe_data = obs_temp_c, 
@@ -29,14 +29,16 @@ calc_all_metric <- function(dat_in, grouping) {
 # Calls exceedance metric to find when the exceedance of certain temperature was predicted correctly by the models. 
 calc_exc_metric <- function(dat_in, grouping) {
   dat_in <- dat_in %>%
+    mutate(year = lubridate::year(date),
+           month = lubridate::month(date)) %>%
     group_by(model)
   
-  group_test <- deparse(substitute({{grouping}}))
+  group_test <- deparse(substitute(grouping))
   if (group_test == 'NA') {
     dat_mod <- dat_in
   } else {
     dat_mod <- dat_in %>%
-      group_by({{grouping}})
+      group_by(model, {{grouping}})
   }
   exceedance_metric <- dat_mod %>%
   summarize(n = n(),
