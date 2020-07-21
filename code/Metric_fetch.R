@@ -53,7 +53,7 @@ nse_metric =rgnc_by_seg %>%
   summarize(nse_process = calc_nash(temp_c, sntemp_temp_c),
             nse_hybrid = calc_nash(temp_c, rgcn2_full_temp_c))
 # To view the data associated with this segment we can filter through the dataset:
-View(filter(rgnc_dat_filter, seg_id_nat %in% 1549)) #filter(data, column_name %in% the certian group)
+View(filter(rgnc_dat_filter, seg_id_nat %in% 1549)) #filter(data, column_name %in% the certain group)
 
 # Implementing exceedance function 
 exceeds <- rgnc_dat_filter %>%
