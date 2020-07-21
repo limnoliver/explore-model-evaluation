@@ -2,7 +2,7 @@
 #an example of paired predictions and observations
 library(dplyr)
 dat <- readRDS('data/predicted_observed_temps.rds')
-predicted_observed_temps_long_dat <- readRDS('data/predicted_observed_temps_long.rds')
+long_dat <- readRDS('data/predicted_observed_temps_long.rds')
 summary(long_dat)
 # note that SNTemp predictions (uncalibrated process model)
 # have predictions for all places/times
