@@ -72,22 +72,6 @@ mare_metric_wo_inf <- rgnc_by_seg %>%
 compare_mare <- plyr:: join_all(list(mare_metric, mare_metric_wo_zero, mare_metric_wo_inf), by = 'seg_id_nat', type = 'left')
 compare_metric <- plyr:: join_all(list(mae_metric, rmse_metric, mare_metric_wo_inf),  by = 'seg_id_nat', type = 'left')
 summary(compare_metric) 
-#plot each metric with proc error across from hybrid error.
-par(mfrow = c(3,2))
-plot(mae_metric$seg_id_nat, mae_metric$mae_process, main = 'Process Model Evaluation', xlab = 'Segment ID', ylab = 'MAE') 
-plot(mae_metric$seg_id_nat, mae_metric$mae_hybrid, main = 'Hybrid Model Evaluation', xlab = 'Segment ID', ylab = 'MAE')
-plot(rmse_metric$seg_id_nat, rmse_metric$rmse_process, main = 'Process Model Evaluation', xlab = 'Segment ID', ylab = 'RMSE')
-plot(rmse_metric$seg_id_nat, rmse_metric$rmse_hybrid, main = 'Hybrid Model Evaluation', xlab = 'Segment ID', ylab = 'RMSE')
-plot(mare_metric_wo_zero$seg_id_nat, mare_metric_wo_zero$mare_process_wo_zero, main = 'Process Model Evaluation', xlab = 'Segment ID', ylab = 'MARE')
-plot(mare_metric_wo_zero$seg_id_nat, mare_metric_wo_zero$mare_hybrid_wo_zero, main = 'Hybrid Model Evaluation', xlab = 'Segment ID', ylab = 'MARE')
-
-#Creating histogram to compare the different errors we calculated. 
-hist(mae_metric$mae_process, main = 'Process Model Evaluation', xlab = 'MAE')
-hist(mae_metric$mae_hybrid, main = 'Hybrid Model Evaluation', xlab = 'MAE')
-hist(rmse_metric$rmse_process, main = 'Process Model Evaluation', xlab = 'RMSE')
-hist(rmse_metric$rmse_hybrid, main = 'Hybrid Model Evaluation', xlab = 'RMSE')
-hist(mare_metric_wo_zero$mare_process_wo_zero, main = 'Process Model Evaluation', xlab = 'MARE')
-hist(mare_metric_wo_zero$mare_hybrid_wo_zero, main = 'Hyprid Model Evaluation', xlab = 'MARE')
 
 #Finding the max temperature for each segment. Also, finding the year associated with it. 
 max_temp_timing <- rgnc_by_seg_date %>% 
