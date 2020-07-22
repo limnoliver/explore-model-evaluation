@@ -15,7 +15,8 @@ calc_all_metric <- function(dat_in, grouping) {
       group_by(model, {{grouping}})
   }
   metrics <- dat_mod %>%
-    summarize(mae = calc_mae(observe_data = obs_temp_c, 
+    summarize(n = n(),
+              mae = calc_mae(observe_data = obs_temp_c, 
                     predict_data = pred_temp_c),
               rmse =  calc_rmse(observe_data = obs_temp_c, 
                       predict_data = pred_temp_c),
@@ -60,13 +61,13 @@ calc_exc_metric <- function(dat_in, grouping) {
   return(exceedance_metric)
 }
 
-## Calls the calc_timing_max that returns the max temperature and time of max temps. This function accepts 2 arguments data_in and date-range. date_range in set to summer days. It groups data by the model, segment_id, and year.
+## Calls the calc_tim_temp_max that returns the max temperature and time of max temps. This function accepts 2 arguments data_in and date-range. date_range in set to summer days. It groups data by the model, segment_id, and year.
 calc_max_metric <- function(dat_in, date_range = 170:245){
   dat_mod <- dat_in %>%
-    group_by(model, seg_id_nat, lubridate::year(date)) 
+    group_by(model, seg_id_nat, year = lubridate::year(date)) 
   
   max_metric <- 
-    calc_timing_max(data_in = dat_mod, 
+    calc_tim_temp_max(data_in = dat_mod, 
                     observe_col = obs_temp_c, predict_col = pred_temp_c, 
                     date_col = date)
   return(max_metric)

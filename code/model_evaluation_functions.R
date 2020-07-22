@@ -41,7 +41,7 @@ calc_mare <- function(observe_data, predict_data, n_digits = 2){
 } 
 
 # Max data-values and Time of max. 
-calc_timing_max <- function(data_in, observe_col, predict_col, date_col,  date_range = 170:245, n_digits = 2) {
+calc_tim_temp_max <- function(data_in, observe_col, predict_col, date_col,  date_range = 170:245, n_digits = 2) {
   #' Timing and Magnitude of Maximums
   #' @description Calculates the error between the maximum observed and modeled data values. And it calculates the occurrence error (observed occurrence and predicted occurrence) that is associated with the found maximum data values. 
   #' @details Finds the maximum observed and modeled data values. While providing the day of the year associated with the occurrence of maximum data values. Finally, this function will calculate the error (the difference between observed and predicted data) between the maximum values, then rounds to the users-specified decimal places. And the error for the occurrence (day of the year) of the maximum values.
