@@ -1,7 +1,7 @@
 ## Creating function to use the metrics function for future input into the Delaware project pipeline:
 
 # Calls the four metrics functions (mae, rmse, mare, and nash). This function accepts 2 arguments data-in and grouping, the inputted data will be grouped by model to suit the data we're working with. The grouping arguments accepts 'NA' for no grouping, or any other grouping such as by segment, month, year, etc. We call the four metrics function to produce a dataframe with metrics of interest.  
-calc_all_metric <- function(dat_in, grouping) {
+calc_all_metric <- function(dat_in, grouping, file_path) {
   dat_in <- dat_in %>%
     mutate(year = lubridate::year(date),
            month = lubridate::month(date)) %>%
@@ -24,7 +24,8 @@ calc_all_metric <- function(dat_in, grouping) {
                       predict_data = pred_temp_c),
               nse = calc_nash(observe_col = obs_temp_c, 
                      predict_col =  pred_temp_c))
-  return(metrics)
+  write_csv(metrics, path = file_path)
+  return(file_path)
 }
 
 # Calls exceedance metric to find when the exceedance of certain temperature was predicted correctly by the models. 
