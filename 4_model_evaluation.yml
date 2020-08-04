@@ -2,11 +2,13 @@ target_default: 4_model_evaluation
 
 packages:
   - dplyr
-  - scipiper
+  - docstring
+  - readr
 
 sources:
   - code/evaluate_models.R
   - code/model_evaluation_functions.R
+  - code/Read_rds_data.R
   
 
 targets:
@@ -24,33 +26,34 @@ targets:
      
 
   #fetching the data
-  command: readRDS('data/predicted_observed_temps_long.rds')
+  long_dat:
+    command: read_rds('data/predicted_observed_temps_long.rds')
   
   # general metrics at all, seg, year, month scales
   4_model_evaluation/out/gen_metrics_all_obs.csv:
-    command: calc_all_metric(long_dat, grouping = NA)
+    command: calc_all_metric(long_dat, grouping = I('NA'), file_path = target_name)
 
   4_model_evaluation/out/gen_metrics_by_seg.csv:
-    command: calc_all_metric(long_dat, grouping = seg_id_nat)
+    command: calc_all_metric(long_dat, grouping = I('seg_id_nat'))
 
   4_model_evaluation/out/gen_metrics_by_year.csv:
-    command: calc_all_metric(long_dat, grouping = year)
+    command: calc_all_metric(long_dat, grouping = I('year'))
 
   4_model_evaluation/out/gen_metrics_by_month.csv:
-    command: calc_all_metric(long_dat, grouping = month)
+    command: calc_all_metric(long_dat, grouping = I('month'))
 
   # exceedance metrics
   4_model_evaluation/out/exceedance_metrics_all_obs.csv:
     command: calc_exc_metric(long_dat, grouping = NA)
 
   4_model_evaluation/out/exceedance_metrics_by_seg.csv:
-    command: calc_exc_metric(long_dat, grouping = seg_id_nat)
+    command: calc_exc_metric(long_dat, grouping = I('seg_id_nat'))
 
   4_model_evaluation/out/exceedance_metrics_by_year.csv:
-    command: calc_exc_metric(long_dat, grouping = year)
+    command: calc_exc_metric(long_dat, grouping = I('year'))
 
   4_model_evaluation/out/exceedance_metrics_by_month.csv:
-    command: calc_exc_metric(long_dat, grouping = month)
+    command: calc_exc_metric(long_dat, grouping = I('month'))
 
   # max timing and magnitude exceedance_metrics_by_month
   4_model_evaluation/out/max_metrics_by_seg_year.csv:
