@@ -1,5 +1,5 @@
 # Functions to calculate metrics for model evaluation.
-
+library(docstring) ## needed to call the function that are not in a package.
 # Mean Absolute Error (MAE) metric
 calc_mae <- function(observe_data, predict_data, n_digits = 2) {
   #' Mean Absolute Error (MAE)
@@ -35,12 +35,13 @@ calc_mare <- function(observe_data, predict_data, n_digits = 2){
   #' @param predict_data the modeled predicted data column.
   #' @param n_digits the number of decimals of places to round the calculated mare value. The function rounds to 2 decimal places by default. 
   #' @return A dataframe or table same class as input data.
+  observe_data = ifelse( observe_data %in% 0, 0.1, observe_data)
   mare <- round(mean((abs(observe_data - predict_data) / observe_data), na.rm = TRUE), digits = n_digits)
   return(mare)
 } 
 
 # Max data-values and Time of max. 
-calc_max_timing <- function(data_in, observe_col, predict_col, date_col,  date_range = 170:245, n_digits = 2) {
+calc_tim_temp_max <- function(data_in, observe_col, predict_col, date_col,  date_range = 170:245, n_digits = 2) {
   #' Timing and Magnitude of Maximums
   #' @description Calculates the error between the maximum observed and modeled data values. And it calculates the occurrence error (observed occurrence and predicted occurrence) that is associated with the found maximum data values. 
   #' @details Finds the maximum observed and modeled data values. While providing the day of the year associated with the occurrence of maximum data values. Finally, this function will calculate the error (the difference between observed and predicted data) between the maximum values, then rounds to the users-specified decimal places. And the error for the occurrence (day of the year) of the maximum values.
@@ -55,9 +56,11 @@ calc_max_timing <- function(data_in, observe_col, predict_col, date_col,  date_r
     summarize(max_obs = max({{observe_col}}),
               max_timing_obs = lubridate::yday(date[which.max({{observe_col}})]),
               max_mod = max({{predict_col}}),
-              max_timing_mod = lubridate::yday(date[which.max({{predict_col}})])) %>%
+              max_timing_mod = lubridate::yday(date[which.max({{predict_col}})]),
+              summer_complete = all(date_range %in% lubridate::yday(date))) %>%
+    filter(summer_complete) %>%
     mutate(error_obs_pred = round(abs(max_obs - max_mod), digits = n_digits),
-           error_max_timing = abs(max_timing_obs - max_timing_mod))
+           error_max_timing = abs(max_timing_obs - max_timing_mod)) 
   return(max_fun_out)
 }
 

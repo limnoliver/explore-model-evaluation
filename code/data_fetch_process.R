@@ -2,6 +2,9 @@
 #an example of paired predictions and observations
 library(dplyr)
 dat <- readRDS('data/predicted_observed_temps.rds')
+long_dat <- readRDS('data/predicted_observed_temps_long.rds')
+summary(long_dat)
+length(unique(long_dat$seg_id_nat))
 # note that SNTemp predictions (uncalibrated process model)
 # have predictions for all places/times
 # here you just have the test period from the hybrid model (rgcn2_full_temp_c)
@@ -31,7 +34,7 @@ rmse <- rgnc_by_seg %>%
 
 # Mean Absolute Relative Error (MARE) 
 mare <- rgnc_by_seg %>%
-  mutate(temp_c = ifelse( temp_c %in% 0, 0.1, temp_c)) %>%
+  #mutate(temp_c = ifelse( temp_c %in% 0, 0.1, temp_c)) %>%
   summarize( MARE_Process_Model = calc_mare(temp_c, sntemp_temp_c),
              MARE_Hybrid_Model = calc_mare(temp_c, rgcn2_full_temp_c))
 
@@ -39,10 +42,10 @@ compare_metric <- plyr:: join_all(list(mae, rmse, mare),  by = 'seg_id_nat', typ
 summary(compare_metric) 
 
 #Finding the max temperature for each segment and year
-max_process_metrics = calc_max_timing(data_in = rgnc_by_seg_date, 
+max_process_metrics = calc_tim_temp_max(data_in = rgnc_by_seg_date, 
                                            observe_col = temp_c, predict_col = sntemp_temp_c, 
                                            date_col = date)
-max_hybrid_metrics = calc_max_timing(data_in = rgnc_by_seg_date, 
+max_hybrid_metrics = calc_tim_temp_max(data_in = rgnc_by_seg_date, 
                                            observe_col = temp_c, predict_col = rgcn2_full_temp_c, 
                                            date_col = date)
 
@@ -51,7 +54,7 @@ nse_metric =rgnc_by_seg %>%
   summarize(nse_process = calc_nash(temp_c, sntemp_temp_c),
             nse_hybrid = calc_nash(temp_c, rgcn2_full_temp_c))
 # To view the data associated with this segment we can filter through the dataset:
-View(filter(rgnc_dat_filter, seg_id_nat %in% 1549)) #filter(data, column_name %in% the certian group)
+View(filter(rgnc_dat_filter, seg_id_nat %in% 1549)) #filter(data, column_name %in% the certain group)
 
 # Implementing exceedance function 
 exceeds <- rgnc_dat_filter %>%
